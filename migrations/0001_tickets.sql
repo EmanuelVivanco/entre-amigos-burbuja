@@ -37,11 +37,8 @@ INSERT OR IGNORE INTO tickets (id, table_number, seat_letter, status, buyer_name
 SELECT printf('%02d-%s', ((n - 1) / 4) + 1, substr('ABCD', ((n - 1) % 4) + 1, 1)),
        ((n - 1) / 4) + 1,
        substr('ABCD', ((n - 1) % 4) + 1, 1),
-       CASE WHEN n IN (2,3,6,9,10,13,18,21,24,27,31,34,38,41,44,48,53,57,62,66,71,76,83,89,94,101,108,116)
-            THEN 'Vendido' ELSE 'Disponible' END,
-       CASE WHEN n IN (2,3,6,9,10,13,18,21,24,27,31,34,38,41,44,48,53,57,62,66,71,76,83,89,94,101,108,116)
-            THEN CASE (n - 1) % 4 WHEN 0 THEN 'Mariana López' WHEN 1 THEN 'Diego Ramírez' WHEN 2 THEN 'Sofía Torres' ELSE 'Carlos Méndez' END
-            ELSE NULL END
+       'Disponible',
+       NULL
 FROM inventory;
 
 CREATE TRIGGER IF NOT EXISTS ticket_sale_requires_available

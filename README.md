@@ -10,7 +10,7 @@ Las salas VIP 01, 02 y 03 aparecen como vendidas. El proyecto incluye una integr
 ### Conectar Cloudflare D1
 
 1. En Cloudflare, abre **Storage & databases → D1 SQL Database** y crea una base para este proyecto.
-2. Ejecuta el archivo `migrations/0001_tickets.sql` en el editor SQL de esa base. La migración carga 120 lugares de demostración; ejecútala una sola vez en una base nueva.
+2. Ejecuta el archivo `migrations/0001_tickets.sql` en el editor SQL de esa base. La migración crea los 120 lugares como disponibles; ejecútala una sola vez en una base nueva. Así no se mezclan nombres ni ventas ficticias con la operación real.
 3. Abre el proyecto Pages **entre-amigos-burbuja → Settings → Functions → D1 database bindings**.
 4. Añade la vinculación con el nombre `BURBUJA_DB`, selecciona la base creada y guarda.
 5. Vuelve a desplegar el proyecto. El panel cambiará de demostración a base de datos cuando la conexión esté activa.
