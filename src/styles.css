@@ -119,3 +119,10 @@
 .seat-option-unavailable .seat-check{background:#e3e6e9;color:#7f8790}
 @media(max-width:760px){.seat-option-sold .seat-detail small.buyer-name{font-size:11px}}
 @media(max-width:380px){.seat-option-sold .seat-detail small.buyer-name{font-size:10px}}
+.database-pill{background:#eaf7ef;color:#26784f}.database-pill i{background:#3aab70}
+.database-notice{display:flex;flex-direction:column;gap:4px;margin:0 0 16px;padding:12px 14px;border:1px solid #f1dfb7;border-radius:10px;background:#fffaf0;color:#725728;font-size:12px}.database-notice strong{font-size:12px}.database-notice span{font-size:11px;line-height:1.45}
+.cancel-hint{margin:-6px 0 10px;color:#a34949;font-size:11px}
+.history-button{margin:12px 0 18px;padding:0;border:0;background:transparent;color:#6558ce;font-size:12px;font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.sale-modal form select{width:100%;height:43px;margin:7px 0 16px;padding:0 12px;border:1px solid #e7e6e1;border-radius:8px;background:#fff;color:#353a37;font:inherit;font-size:13px}.cancel-icon{background:#fff0ef;color:#bd3d43}
+.history-modal{max-height:85vh;overflow:auto}.history-list{display:grid;gap:8px;margin-top:18px}.history-list article{display:grid;gap:4px;padding:12px;border:1px solid #ecebe7;border-radius:9px;font-size:12px}.history-list article strong{color:#333}.history-list article span,.history-list article small{color:#797f7a}.history-list>p{color:#797f7a;font-size:13px}
+@media(max-width:760px){.database-notice{font-size:11px}.history-button{font-size:11px}}
