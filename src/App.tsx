@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
 // Este estado describe la venta; el futuro check-in se guardará por separado.
-type Status = 'Disponible' | 'Vendido'
+type Status = 'Disponible' | 'Vendido' | 'No disponible'
 type Ticket = { id: string; table: number; letter: string; status: Status; buyer?: string }
 
 const STORAGE_KEY = 'burbuja-demo-tickets-v1'
@@ -63,7 +63,7 @@ export default function App() {
   const [saleOpen, setSaleOpen] = useState(false)
   const [notice, setNotice] = useState('')
   const soldCount = tickets.filter((ticket) => ticket.status === 'Vendido').length
-  const availableCount = tickets.length - soldCount
+  const availableCount = tickets.filter((ticket) => ticket.status === 'Disponible').length
   const tableTickets = tickets.filter((ticket) => ticket.table === activeTable)
   const activeAvailable = tableTickets.filter((ticket) => ticket.status === 'Disponible').length
 
@@ -73,7 +73,7 @@ export default function App() {
   }
 
   function toggleTicket(ticket: Ticket) {
-    if (ticket.status === 'Vendido') return
+    if (ticket.status !== 'Disponible') return
     setSelected((current) => current.includes(ticket.id) ? current.filter((id) => id !== ticket.id) : [...current, ticket.id])
   }
 
@@ -120,15 +120,18 @@ export default function App() {
 
         <section className="map-card real-map-card" id="boletos" aria-label="Croquis interactivo del Club Burbuja">
           <div className="map-heading"><div><div className="section-kicker">CROQUIS DEL CLUB</div><h2>Mapa de mesas</h2><p>Toca una mesa para ver sus cuatro lugares.</p></div><span className="map-source-badge"><Icon name="spark"/> CROQUIS REAL</span></div>
-          <div className="legend real-map-legend"><span><i className="legend-dot open"/>Disponible</span><span><i className="legend-dot taken"/>Vendido</span><span><i className="legend-dot chosen"/>Seleccionado</span><small>Asientos: A arriba · B derecha · C abajo · D izquierda</small></div>
+          <div className="legend real-map-legend"><span><i className="legend-dot open"/>Disponible</span><span><i className="legend-dot taken"/>Vendido</span><span><i className="legend-dot unavailable"/>No disponible</span><span><i className="legend-dot chosen"/>Seleccionado</span><small>Asientos: A arriba · B derecha · C abajo · D izquierda</small><small className="table-status-guide">Mesa: verde 2+ disponibles · amarillo 1 · rojo agotada</small></div>
           <div className="floorplan-wrap">
             <div className="floorplan">
               <img src="/club-burbuja-croquis.png" alt="Croquis del Club Burbuja con pista, escenario, bar, salas VIP y mesas 1 a 30" />
               {tablePositions.map(({ table, x, y }) => {
                 const seats = tickets.filter((ticket) => ticket.table === table)
                 const remaining = seats.filter((ticket) => ticket.status === 'Disponible').length
-                return <button key={table} className={`floor-table ${activeTable === table ? 'is-active' : ''}`} style={{ left: `${x / 720 * 100}%`, top: `${y / 472 * 100}%` }} onClick={() => setActiveTable(table)} aria-label={`Mesa ${table}, ${remaining} de 4 disponibles`} aria-pressed={activeTable === table}>
-                  <span className="floor-table-number">{table}</span><span className="floor-seats" aria-hidden="true">{seats.map((seat) => <i key={seat.id} className={`${seat.status === 'Vendido' ? 'seat-sold' : 'seat-open'} ${selected.includes(seat.id) ? 'seat-chosen' : ''}`} />)}</span>
+                const soldOut = seats.every((ticket) => ticket.status === 'Vendido')
+                const tableState = soldOut ? 'sold-out' : remaining === 0 ? 'unavailable' : remaining < 2 ? 'limited' : 'available'
+                const tableStateLabel = soldOut ? 'agotada' : tableState === 'unavailable' ? 'sin lugares disponibles' : tableState === 'limited' ? 'queda 1 lugar' : 'con lugares disponibles'
+                return <button key={table} className={`floor-table floor-table--${tableState} ${activeTable === table ? 'is-active' : ''}`} style={{ left: `${x / 720 * 100}%`, top: `${y / 472 * 100}%` }} onClick={() => setActiveTable(table)} aria-label={`Mesa ${table}, ${tableStateLabel}; ${remaining} de 4 disponibles`} aria-pressed={activeTable === table}>
+                  <span className="floor-table-number">{table}</span><span className="floor-seats" aria-hidden="true">{seats.map((seat) => <i key={seat.id} className={`${seat.status === 'Vendido' ? 'seat-sold' : seat.status === 'No disponible' ? 'seat-unavailable' : 'seat-open'} ${selected.includes(seat.id) ? 'seat-chosen' : ''}`} />)}</span>
                 </button>
               })}
             </div>
@@ -140,9 +143,10 @@ export default function App() {
             <div className="seat-panel-heading"><div><span className="section-kicker">MESA SELECCIONADA</span><h3>Mesa {String(activeTable).padStart(2, '0')}</h3></div><span className="seat-count">{activeAvailable} de 4 disponibles</span></div>
             <div className="seat-options">{tableTickets.map((ticket) => {
               const isSelected = selected.includes(ticket.id)
-              return <button key={ticket.id} className={`seat-option ${ticket.status === 'Vendido' ? 'seat-option-sold' : ''} ${isSelected ? 'seat-option-selected' : ''}`} disabled={ticket.status === 'Vendido'} aria-pressed={isSelected} onClick={() => toggleTicket(ticket)}>
-                <span className="seat-letter">{ticket.letter}</span><span className="seat-detail"><strong>{isSelected ? 'Seleccionado' : ticket.status}</strong><small>{ticket.status === 'Vendido' ? ticket.buyer : ticket.id}</small></span>
+              return <button key={ticket.id} className={`seat-option ${ticket.status === 'Vendido' ? 'seat-option-sold' : ticket.status === 'No disponible' ? 'seat-option-unavailable' : ''} ${isSelected ? 'seat-option-selected' : ''}`} disabled={ticket.status !== 'Disponible'} aria-pressed={isSelected} onClick={() => toggleTicket(ticket)}>
+                <span className="seat-letter">{ticket.letter}</span><span className="seat-detail"><strong>{isSelected ? 'Seleccionado' : ticket.status}</strong><small className={ticket.status === 'Vendido' ? 'buyer-name' : ''}>{ticket.status === 'Vendido' ? ticket.buyer : ticket.id}</small></span>
                 {ticket.status === 'Vendido' && <span className="seat-check"><Icon name="check"/></span>}
+                {ticket.status === 'No disponible' && <span className="seat-check seat-unavailable-check"><Icon name="close"/></span>}
               </button>
             })}</div>
           </section>

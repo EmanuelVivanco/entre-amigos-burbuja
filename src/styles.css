@@ -91,3 +91,31 @@
   .seat-option{padding:7px 5px;min-height:64px}
   .seat-detail strong{font-size:6px}
 }
+
+/* Estados visibles de cada boleto y ocupación de mesa */
+.real-map-legend .legend-dot.open{background:#36a96e;border:1px solid #258751}
+.real-map-legend .legend-dot.taken{background:#e34c4c;border:1px solid #c93636}
+.real-map-legend .legend-dot.unavailable{background:#aeb4bc;border:1px solid #858d96}
+.real-map-legend .legend-dot{border-radius:50%}
+.real-map-legend small.table-status-guide{flex-basis:100%;margin-left:0}
+.floor-seats i.seat-open{background:#35aa6d}
+.floor-seats i.seat-sold{background:#e34c4c}
+.floor-seats i.seat-unavailable{background:#aeb4bc}
+.floor-table.floor-table--available{background:#278b59ed}
+.floor-table.floor-table--limited{background:#e3a61bed;color:#302400}
+.floor-table.floor-table--sold-out{background:#d83f43ed}
+.floor-table.floor-table--unavailable{background:#969da5ed}
+.floor-table.floor-table--limited .floor-seats i,
+.floor-table.floor-table--sold-out .floor-seats i,
+.floor-table.floor-table--unavailable .floor-seats i{box-shadow:0 0 0 1px #fff8}
+.floor-table.floor-table--limited .floor-seats i.seat-open{background:#258751}
+.floor-table.floor-table--sold-out .floor-seats i.seat-sold{background:#ad2026}
+.seat-option-sold{border-color:#f1d5d5;background:#fff8f8;color:#a93636}
+.seat-option-sold .seat-detail strong{color:#cf3f43}
+.seat-option-sold .seat-detail small.buyer-name{color:#482b2b;font-size:12px;font-weight:700;line-height:1.25;white-space:normal;overflow-wrap:anywhere;max-width:100%}
+.seat-option-sold .seat-check{background:#f8dddd;color:#c7363b}
+.seat-option-unavailable{border-color:#e1e4e8;background:#f3f4f5;color:#858c94;cursor:not-allowed}
+.seat-option-unavailable .seat-detail strong,.seat-option-unavailable .seat-detail small{color:#858c94}
+.seat-option-unavailable .seat-check{background:#e3e6e9;color:#7f8790}
+@media(max-width:760px){.seat-option-sold .seat-detail small.buyer-name{font-size:11px}}
+@media(max-width:380px){.seat-option-sold .seat-detail small.buyer-name{font-size:10px}}
