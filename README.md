@@ -7,6 +7,8 @@ Primera versión mobile-first para administrar 120 boletos en 30 mesas con cuatr
 
 Las salas VIP 01, 02 y 03 aparecen como vendidas. El proyecto incluye una integración opcional con Cloudflare D1: al conectar la base, el panel guarda ventas y cancelaciones, y registra un historial que conserva el nombre anterior y el motivo. Una cancelación permite devolver el lugar a venta o marcarlo como no disponible; no se elimina el registro. Mientras D1 no esté conectado, el panel señala que está en modo demostración y los cambios permanecen en ese navegador.
 
+Cuando se confirma una venta, el panel genera un boleto en PNG con el nombre y los asientos comprados. Desde celular se puede compartir con las opciones del dispositivo; en otros equipos se descarga la imagen. El mapa se actualiza al volver a la pestaña y cada 15 segundos cuando la base de datos está activa. También hay un botón para actualizarlo manualmente.
+
 ### Conectar Cloudflare D1
 
 1. En Cloudflare, abre **Storage & databases → D1 SQL Database** y crea una base para este proyecto.
