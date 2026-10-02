@@ -249,6 +249,13 @@ export default function App() {
         {dataMode === 'database' && dbError && <div className="database-notice" role="status"><strong>Sincronización temporalmente interrumpida</strong><span>{dbError} No hagas cambios hasta que vuelva la conexión.</span></div>}
         <section className="page-heading"><div><div className="eyebrow"><span/> EVENTO ACTIVO</div><h1>Panel de control</h1><p className="subtitle">Selecciona mesa y asigna sus lugares.</p></div><div className="heading-actions"><button className="sync-button" disabled={dataMode === 'loading'} onClick={() => refreshTickets().catch((error: Error) => { setDbError(error.message); setNotice(error.message) })}><Icon name="refresh"/><span>Actualizar</span></button>{dataMode === 'demo' && <button className="reset-button" onClick={resetDemo}><Icon name="refresh"/> <span>Reiniciar demo</span></button>}</div></section>
 
+        <section className="event-flyer-card" aria-label="Flyer del evento">
+          <a className="event-flyer-image-link" href="/entre-amigos-flyer.jpg" target="_blank" rel="noreferrer" aria-label="Abrir flyer del evento en tamaño completo">
+            <img src="/entre-amigos-flyer.jpg" alt="Flyer oficial: XX aniversario de Entre Amigos, show en vivo de SERÉ, 13 de noviembre a las 20:00 horas en el Hotel Xalapa, Salón La Burbuja" />
+          </a>
+          <div className="event-flyer-copy"><span className="section-kicker">FLYER DEL EVENTO</span><h2>Celebrando el XX aniversario</h2><p>Entre Amigos presenta un show en vivo de SERÉ.</p><div className="event-flyer-details"><strong>13 de noviembre · 20:00 hrs</strong><span>Hotel Xalapa · Salón “La Burbuja”</span></div><a href="/entre-amigos-flyer.jpg" target="_blank" rel="noreferrer">Ver flyer completo <Icon name="arrow"/></a></div>
+        </section>
+
         <section className="stats-grid compact-stats" aria-label="Resumen de boletos">
           <article className="stat-card total-card"><div className="stat-top"><span>Total de boletos</span><span className="stat-icon violet"><Icon name="ticket"/></span></div><div className="stat-value">120</div><div className="stat-foot">30 mesas · 4 lugares por mesa</div></article>
           <article className="stat-card"><div className="stat-top"><span>Disponibles</span><span className="stat-icon mint"><span className="circle-check"><Icon name="check"/></span></span></div><div className="stat-value">{availableCount}<small> / 120</small></div><div className="stat-foot"><span className="stat-dot available-dot"/>Listos para asignar</div></article>
