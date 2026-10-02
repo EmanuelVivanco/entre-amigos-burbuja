@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createTicketImage } from './ticketImage'
 
 // Este estado describe la venta; el futuro check-in se guardará por separado.
 type Status = 'Disponible' | 'Vendido' | 'No disponible'
@@ -71,6 +72,9 @@ export default function App() {
   const [historyOpen, setHistoryOpen] = useState(false)
   const [history, setHistory] = useState<TicketEvent[]>([])
   const [busy, setBusy] = useState(false)
+  const [issuedSale, setIssuedSale] = useState<{ buyer: string; ticketIds: string[] } | null>(null)
+  const [ticketImageUrl, setTicketImageUrl] = useState('')
+  const [ticketImageError, setTicketImageError] = useState('')
   const soldCount = tickets.filter((ticket) => ticket.status === 'Vendido').length
   const availableCount = tickets.filter((ticket) => ticket.status === 'Disponible').length
   const tableTickets = tickets.filter((ticket) => ticket.table === activeTable)
@@ -86,11 +90,39 @@ export default function App() {
   }
 
   useEffect(() => {
-    refreshTickets().catch((error: Error) => {
+    if (dataMode === 'loading') refreshTickets().catch((error: Error) => {
       setDataMode('demo')
       setDbError(error.message)
     })
-  }, [])
+    if (dataMode !== 'database') return
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') refreshTickets().catch((error: Error) => setDbError(error.message))
+    }
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === 'visible') refreshTickets().catch((error: Error) => setDbError(error.message))
+    }, 15000)
+    window.addEventListener('focus', refreshWhenVisible)
+    return () => {
+      window.clearInterval(interval)
+      window.removeEventListener('focus', refreshWhenVisible)
+    }
+  }, [dataMode])
+
+  useEffect(() => {
+    if (!issuedSale) return
+    let objectUrl = ''
+    setTicketImageUrl('')
+    setTicketImageError('')
+    const purchased = issuedSale.ticketIds.map((id) => {
+      const ticket = tickets.find((item) => item.id === id)
+      return ticket ? { id: ticket.id, table: ticket.table, letter: ticket.letter } : null
+    }).filter((ticket): ticket is { id: string; table: number; letter: string } => ticket !== null)
+    createTicketImage(issuedSale.buyer, purchased).then((blob) => {
+      objectUrl = URL.createObjectURL(blob)
+      setTicketImageUrl(objectUrl)
+    }).catch((error: Error) => setTicketImageError(error.message))
+    return () => { if (objectUrl) URL.revokeObjectURL(objectUrl) }
+  }, [issuedSale, tickets])
 
   function updateTickets(next: Ticket[]) {
     setTickets(next)
@@ -109,27 +141,50 @@ export default function App() {
     if (!cleanName || selected.length === 0) return
     if (busy) return
     setBusy(true)
+    const soldIds = [...selected]
     if (dataMode === 'database') {
       try {
         const response = await fetch('/api/sales', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: cleanName, ticketIds: selected }) })
         const data = await response.json()
         if (!response.ok) throw new Error(data.error || 'No se pudo registrar la venta.')
-        await refreshTickets()
       } catch (error) {
+        await refreshTickets().catch((syncError: Error) => setDbError(syncError.message))
         setNotice((error as Error).message)
         setBusy(false)
         return
       }
+      const soldSet = new Set(soldIds)
+      setTickets((current) => current.map((ticket) => soldSet.has(ticket.id) ? { ...ticket, status: 'Vendido', buyer: cleanName } : ticket))
+      await refreshTickets().catch((error: Error) => setDbError(error.message))
     } else {
-    const ids = new Set(selected)
-    updateTickets(tickets.map((ticket) => ids.has(ticket.id) ? { ...ticket, status: 'Vendido', buyer: cleanName } : ticket))
+      const ids = new Set(selected)
+      updateTickets(tickets.map((ticket) => ids.has(ticket.id) ? { ...ticket, status: 'Vendido', buyer: cleanName } : ticket))
     }
     setNotice(`${selected.length} ${selected.length === 1 ? 'boleto registrado' : 'boletos registrados'} para ${cleanName}`)
+    setIssuedSale({ buyer: cleanName, ticketIds: soldIds })
     setSelected([])
     setBuyer('')
     setSaleOpen(false)
     setBusy(false)
     window.setTimeout(() => setNotice(''), 4000)
+  }
+
+  async function shareTicketImage() {
+    if (!ticketImageUrl || !issuedSale) return
+    try {
+      const blob = await fetch(ticketImageUrl).then((response) => response.blob())
+      const file = new File([blob], 'boleto-entre-amigos.png', { type: 'image/png' })
+      if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+        await navigator.share({ files: [file], title: 'Boleto Entre Amigos — Burbuja', text: `Boleto de ${issuedSale.buyer}` })
+      } else {
+        const link = document.createElement('a')
+        link.href = ticketImageUrl
+        link.download = 'boleto-entre-amigos.png'
+        link.click()
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name !== 'AbortError') setNotice(error.message || 'No se pudo compartir la imagen.')
+    }
   }
 
   async function recordCancellation(event: React.FormEvent<HTMLFormElement>) {
@@ -141,12 +196,14 @@ export default function App() {
         const response = await fetch('/api/cancellations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ticketId: cancelTicket.id, reason: cancelReason.trim(), disposition: cancelDisposition }) })
         const data = await response.json()
         if (!response.ok) throw new Error(data.error || 'No se pudo cancelar el boleto.')
-        await refreshTickets()
       } catch (error) {
+        await refreshTickets().catch((syncError: Error) => setDbError(syncError.message))
         setNotice((error as Error).message)
         setBusy(false)
         return
       }
+      setTickets((current) => current.map((ticket) => ticket.id === cancelTicket.id ? { ...ticket, status: cancelDisposition === 'resell' ? 'Disponible' : 'No disponible', buyer: undefined } : ticket))
+      await refreshTickets().catch((error: Error) => setDbError(error.message))
     } else {
       updateTickets(tickets.map((ticket) => ticket.id === cancelTicket.id ? { ...ticket, status: cancelDisposition === 'resell' ? 'Disponible' : 'No disponible', buyer: undefined } : ticket))
     }
@@ -189,7 +246,8 @@ export default function App() {
       <header className="topbar"><div className="mobile-brand"><span className="brand-mark"><span /></span><strong>entre amigos</strong></div><div className="breadcrumb">Eventos <span>/</span> <strong>Burbuja</strong></div><div className="top-actions"><span className={`demo-pill ${dataMode === 'database' ? 'database-pill' : ''}`}><i/> {dataMode === 'database' ? 'BASE DE DATOS' : dataMode === 'loading' ? 'CONECTANDO' : 'MODO DEMO'}</span><div className="top-avatar">EA</div></div></header>
       <div className="page-wrap">
         {dataMode !== 'database' && <div className="database-notice" role="status"><strong>{dataMode === 'loading' ? 'Conectando con la base de datos…' : 'Vista de demostración'}</strong><span>{dataMode === 'loading' ? 'Cargando boletos' : dbError || 'La base de datos de Cloudflare aún no está conectada. Los cambios quedan solo en este navegador.'}</span></div>}
-        <section className="page-heading"><div><div className="eyebrow"><span/> EVENTO ACTIVO</div><h1>Panel de control</h1><p className="subtitle">Selecciona mesa y asigna sus lugares.</p></div>{dataMode === 'demo' && <button className="reset-button" onClick={resetDemo}><Icon name="refresh"/> <span>Reiniciar demo</span></button>}</section>
+        {dataMode === 'database' && dbError && <div className="database-notice" role="status"><strong>Sincronización temporalmente interrumpida</strong><span>{dbError} No hagas cambios hasta que vuelva la conexión.</span></div>}
+        <section className="page-heading"><div><div className="eyebrow"><span/> EVENTO ACTIVO</div><h1>Panel de control</h1><p className="subtitle">Selecciona mesa y asigna sus lugares.</p></div><div className="heading-actions"><button className="sync-button" disabled={dataMode === 'loading'} onClick={() => refreshTickets().catch((error: Error) => { setDbError(error.message); setNotice(error.message) })}><Icon name="refresh"/><span>Actualizar</span></button>{dataMode === 'demo' && <button className="reset-button" onClick={resetDemo}><Icon name="refresh"/> <span>Reiniciar demo</span></button>}</div></section>
 
         <section className="stats-grid compact-stats" aria-label="Resumen de boletos">
           <article className="stat-card total-card"><div className="stat-top"><span>Total de boletos</span><span className="stat-icon violet"><Icon name="ticket"/></span></div><div className="stat-value">120</div><div className="stat-foot">30 mesas · 4 lugares por mesa</div></article>
@@ -237,10 +295,11 @@ export default function App() {
       </div>
     </main>
 
-    {selected.length > 0 && <div className="selection-bar"><div className="selection-copy"><span className="selection-ticket"><Icon name="ticket"/></span><div><strong>{selected.length} {selected.length === 1 ? 'lugar seleccionado' : 'lugares seleccionados'}</strong><small>{selected.slice(0, 3).join(', ')}{selected.length > 3 ? ` +${selected.length - 3} más` : ''}</small></div></div><div className="selection-actions"><button className="clear-selection" onClick={() => setSelected([])}>Cancelar</button><button className="sale-button" disabled={dataMode === 'loading'} onClick={() => setSaleOpen(true)}>Registrar venta <Icon name="arrow"/></button></div></div>}
+    {selected.length > 0 && <div className="selection-bar"><div className="selection-copy"><span className="selection-ticket"><Icon name="ticket"/></span><div><strong>{selected.length} {selected.length === 1 ? 'lugar seleccionado' : 'lugares seleccionados'}</strong><small>{selected.slice(0, 3).join(', ')}{selected.length > 3 ? ` +${selected.length - 3} más` : ''}</small></div></div><div className="selection-actions"><button className="clear-selection" onClick={() => setSelected([])}>Cancelar</button><button className="sale-button" disabled={dataMode === 'loading' || (dataMode === 'database' && Boolean(dbError))} onClick={() => setSaleOpen(true)}>Registrar venta <Icon name="arrow"/></button></div></div>}
 
-    {saleOpen && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy) setSaleOpen(false) }}><section className="sale-modal" role="dialog" aria-modal="true" aria-labelledby="sale-title"><button className="modal-close" aria-label="Cerrar" onClick={() => setSaleOpen(false)}><Icon name="close"/></button><div className="modal-icon"><Icon name="ticket"/></div><div className="section-kicker">NUEVA VENTA</div><h2 id="sale-title">Registrar boletos</h2><p className="modal-description">Agrega el nombre de quien compró los lugares seleccionados.</p><div className="modal-ticket-summary"><div><span>Lugares seleccionados</span><strong>{selected.length}</strong></div><div className="summary-chips">{selected.map((id) => <span key={id}>{id}</span>)}</div></div><form onSubmit={recordSale}><label htmlFor="buyer-name">Nombre del comprador</label><input id="buyer-name" autoFocus required maxLength={80} placeholder="Ej. María García" value={buyer} onChange={(event) => setBuyer(event.target.value)}/><p className="name-only-note"><span>i</span> El registro solicita únicamente el nombre.</p><button className="confirm-sale" type="submit" disabled={!buyer.trim() || busy}>{busy ? 'Guardando…' : 'Confirmar venta'} <Icon name="arrow"/></button></form></section></div>}
-    {cancelTicket && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy) setCancelTicket(null) }}><section className="sale-modal" role="dialog" aria-modal="true" aria-labelledby="cancel-title"><button className="modal-close" aria-label="Cerrar" onClick={() => setCancelTicket(null)}><Icon name="close"/></button><div className="modal-icon cancel-icon"><Icon name="close"/></div><div className="section-kicker">CANCELACIÓN · {cancelTicket.id}</div><h2 id="cancel-title">Cancelar boleto</h2><p className="modal-description">La venta de {cancelTicket.buyer} se conservará en el historial.</p><form onSubmit={recordCancellation}><label htmlFor="cancel-reason">Motivo de cancelación</label><input id="cancel-reason" required maxLength={160} placeholder="Ej. Devolución" value={cancelReason} onChange={(event) => setCancelReason(event.target.value)}/><label htmlFor="cancel-disposition">¿Qué pasa con el lugar?</label><select id="cancel-disposition" value={cancelDisposition} onChange={(event) => setCancelDisposition(event.target.value as 'resell' | 'unavailable')}><option value="resell">Disponible para volver a vender</option><option value="unavailable">No se va a utilizar</option></select><button className="confirm-sale" type="submit" disabled={!cancelReason.trim() || busy}>{busy ? 'Guardando…' : 'Confirmar cancelación'} <Icon name="arrow"/></button></form></section></div>}
+    {saleOpen && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy) setSaleOpen(false) }}><section className="sale-modal" role="dialog" aria-modal="true" aria-labelledby="sale-title"><button className="modal-close" aria-label="Cerrar" onClick={() => setSaleOpen(false)}><Icon name="close"/></button><div className="modal-icon"><Icon name="ticket"/></div><div className="section-kicker">NUEVA VENTA</div><h2 id="sale-title">Registrar boletos</h2><p className="modal-description">Agrega el nombre de quien compró los lugares seleccionados.</p><div className="modal-ticket-summary"><div><span>Lugares seleccionados</span><strong>{selected.length}</strong></div><div className="summary-chips">{selected.map((id) => <span key={id}>{id}</span>)}</div></div><form onSubmit={recordSale}><label htmlFor="buyer-name">Nombre del comprador</label><input id="buyer-name" autoFocus required maxLength={80} placeholder="Ej. María García" value={buyer} onChange={(event) => setBuyer(event.target.value)}/><p className="name-only-note"><span>i</span> El registro solicita únicamente el nombre.</p><button className="confirm-sale" type="submit" disabled={!buyer.trim() || busy || (dataMode === 'database' && Boolean(dbError))}>{busy ? 'Guardando…' : 'Confirmar venta'} <Icon name="arrow"/></button></form></section></div>}
+    {issuedSale && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) { setIssuedSale(null); setTicketImageUrl('') } }}><section className="sale-modal ticket-issued-modal" role="dialog" aria-modal="true" aria-labelledby="issued-title"><button className="modal-close" aria-label="Cerrar" onClick={() => { setIssuedSale(null); setTicketImageUrl('') }}><Icon name="close"/></button><div className="section-kicker">VENTA COMPLETADA</div><h2 id="issued-title">Boleto listo para compartir</h2><p className="modal-description">Generamos una imagen para {issuedSale.buyer} con {issuedSale.ticketIds.join(', ')}.</p>{ticketImageUrl ? <img className="ticket-preview" src={ticketImageUrl} alt={`Boleto de ${issuedSale.buyer}`}/> : ticketImageError ? <p className="ticket-image-error">{ticketImageError}</p> : <p className="ticket-generating">Preparando imagen…</p>}{ticketImageUrl && <button className="confirm-sale" onClick={() => shareTicketImage()}>Compartir o guardar imagen <Icon name="arrow"/></button>}<p className="ticket-note">El boleto todavía no lleva código QR; agregaremos el acceso escaneable más adelante.</p></section></div>}
+    {cancelTicket && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy) setCancelTicket(null) }}><section className="sale-modal" role="dialog" aria-modal="true" aria-labelledby="cancel-title"><button className="modal-close" aria-label="Cerrar" onClick={() => setCancelTicket(null)}><Icon name="close"/></button><div className="modal-icon cancel-icon"><Icon name="close"/></div><div className="section-kicker">CANCELACIÓN · {cancelTicket.id}</div><h2 id="cancel-title">Cancelar boleto</h2><p className="modal-description">La venta de {cancelTicket.buyer} se conservará en el historial.</p><form onSubmit={recordCancellation}><label htmlFor="cancel-reason">Motivo de cancelación</label><input id="cancel-reason" required maxLength={160} placeholder="Ej. Devolución" value={cancelReason} onChange={(event) => setCancelReason(event.target.value)}/><label htmlFor="cancel-disposition">¿Qué pasa con el lugar?</label><select id="cancel-disposition" value={cancelDisposition} onChange={(event) => setCancelDisposition(event.target.value as 'resell' | 'unavailable')}><option value="resell">Disponible para volver a vender</option><option value="unavailable">No se va a utilizar</option></select><button className="confirm-sale" type="submit" disabled={!cancelReason.trim() || busy || (dataMode === 'database' && Boolean(dbError))}>{busy ? 'Guardando…' : 'Confirmar cancelación'} <Icon name="arrow"/></button></form></section></div>}
     {historyOpen && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setHistoryOpen(false) }}><section className="sale-modal history-modal" role="dialog" aria-modal="true" aria-labelledby="history-title"><button className="modal-close" aria-label="Cerrar" onClick={() => setHistoryOpen(false)}><Icon name="close"/></button><div className="section-kicker">REGISTRO</div><h2 id="history-title">Historial de movimientos</h2><div className="history-list">{history.length ? history.map((item) => <article key={item.id}><strong>{item.type === 'sale' ? 'Venta' : 'Cancelación'} · {item.ticketId}</strong><span>{item.buyer || 'Sin nombre'} · {item.reason}</span><small>{item.newStatus} · {new Date(item.createdAt + 'Z').toLocaleString('es-MX')}</small></article>) : <p>{dataMode === 'database' ? 'Todavía no hay movimientos registrados en la base de datos.' : 'El historial estará disponible al conectar la base de datos.'}</p>}</div></section></div>}
     {notice && <div className="toast" role="status"><span><Icon name="check"/></span>{notice}</div>}
   </div>
