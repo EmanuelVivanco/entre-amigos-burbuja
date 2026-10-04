@@ -62,7 +62,7 @@ export async function createTicketImage(buyer: string, tickets: TicketImageItem[
     context.fillText('MESA ' + String(group.table).padStart(2, '0'), 132, top + 42)
     context.fillStyle = '#4d815d'
     context.font = '700 22px Arial, sans-serif'
-    context.fillText('ASIENTO(S): ' + group.letters, 490, top + 42)
+    context.fillText('(group.letters.includes('·') ? 'ASIENTOS: ' : 'ASIENTO: ') + group.letters, 490, top + 42)
   })
   const footerY = detailsTop + 425 + groups.length * rowHeight
   context.fillStyle = '#514851'

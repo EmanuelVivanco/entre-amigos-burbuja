@@ -229,7 +229,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{ou
  .event-flyer-copy h2{font-size:18px}.event-flyer-copy p{font-size:12px}.event-flyer-details,.event-flyer-details strong{font-size:12px}
  .real-map-card{padding:18px 14px 0}.real-map-card .map-heading h2{font-size:21px}.real-map-card .map-heading p{font-size:13px}.map-source-badge{font-size:9px}
  .real-map-legend{gap:12px}.real-map-legend>span,.real-map-legend small{font-size:11px}.table-picker{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;padding:14px 0}
- .table-choice{min-height:66px}.table-choice strong{font-size:12px}.table-choice small{font-size:10px}
+ .table-picker .table-choice{width:100%;height:auto;min-height:66px}.table-choice strong{font-size:12px}.table-choice small{font-size:10px}
  .seat-panel-heading h3{font-size:20px}.seat-count{font-size:12px}.seat-options{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
  .seat-option{min-height:92px;padding:12px}.seat-letter{font-size:24px}.seat-detail strong,.seat-detail small{font-size:12px}.seat-option-sold .seat-detail small.buyer-name{font-size:16px}
  .selection-bar{left:10px;bottom:10px;width:calc(100vw - 20px);min-height:0;gap:10px;padding:12px;flex-direction:column;align-items:stretch}
