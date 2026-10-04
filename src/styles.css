@@ -194,7 +194,23 @@
 .event-flyer-details strong{font-size:14px;color:#6c315d}
 .event-flyer-copy>a:last-child{display:inline-flex;align-items:center;gap:7px;color:#6855a4;font-size:12px;font-weight:700;text-decoration:none}
 .event-flyer-copy>a:last-child svg{width:14px;height:14px}
+.issued-sales-card{margin:0 0 20px;padding:22px;border:1px solid #e1e8ed;border-radius:16px;background:#fff;box-shadow:0 8px 24px rgba(20,49,75,.045)}
+.issued-sales-heading{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:14px}
+.issued-sales-heading h2{margin:3px 0 5px;color:#102a43;font:700 22px Poppins,Manrope,sans-serif}
+.issued-sales-heading p{margin:0;color:#526779;font-size:13px;line-height:1.5}
+.issued-sales-heading .section-kicker{color:#168bd2}
+.issued-sales-list{display:grid;gap:9px}
+.issued-sale-row{display:flex;align-items:center;gap:13px;padding:13px;border:1px solid #e3edf2;border-radius:12px;background:#fbfdfe}
+.issued-sale-icon{width:40px;height:40px;flex:0 0 40px;display:grid;place-items:center;border-radius:12px;background:#e7f4fb;color:#168bd2}
+.issued-sale-info{display:grid;min-width:0;gap:3px;flex:1}
+.issued-sale-info strong{color:#102a43;font:700 16px Poppins,Manrope,sans-serif;overflow-wrap:anywhere}
+.issued-sale-info span{color:#286f9f;font-size:13px;font-weight:700;overflow-wrap:anywhere}
+.issued-sale-info small{color:#708394;font-size:11px}
+.issued-sale-view{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:40px;padding:0 12px;border:1px solid #b7dcf1;border-radius:9px;background:#fff;color:#147db9;font-size:13px;font-weight:700;white-space:nowrap}
+.issued-sale-view svg{width:15px;height:15px}
+.issued-sales-empty{margin:0;padding:17px;border-radius:10px;background:#f5f9fb;color:#617789;font-size:14px}
 @media(max-width:520px){.event-flyer-card{grid-template-columns:112px minmax(0,1fr);gap:13px;margin:14px 0 18px;padding:11px;border-radius:13px}.event-flyer-image-link{width:112px;height:145px;border-radius:7px}.event-flyer-copy{gap:6px}.event-flyer-copy h2{font-size:17px}.event-flyer-copy p{font-size:11px}.event-flyer-details{font-size:10px}.event-flyer-details strong{font-size:11px}.event-flyer-copy>a:last-child{font-size:10px}}
+@media(max-width:520px){.issued-sales-card{padding:15px 12px;margin-bottom:14px}.issued-sales-heading{align-items:flex-start;flex-direction:column}.issued-sales-heading h2{font-size:20px}.issued-sales-heading p{font-size:12px}.issued-sale-row{gap:9px;padding:10px}.issued-sale-icon{width:34px;height:34px;flex-basis:34px}.issued-sale-info strong{font-size:14px}.issued-sale-info span{font-size:11px}.issued-sale-info small{font-size:10px}.issued-sale-view{min-height:38px;padding:0 8px;font-size:11px}.issued-sale-view svg{display:none}}
 
 /* Diseño simplificado para facilitar la operación desde teléfono */
 .page-wrap{max-width:1320px}
