@@ -35,3 +35,7 @@ pnpm dev
 ```sh
 pnpm build
 ```
+
+### Publicación
+
+Cloudflare Pages publica la rama `main`; los cambios llegan al sitio cuando termina una implementación de producción exitosa.
