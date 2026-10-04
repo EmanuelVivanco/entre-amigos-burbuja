@@ -20,16 +20,13 @@ const tablePositions = [
 ]
 
 function initialTickets(): Ticket[] {
-  const soldNumbers = new Set([2, 3, 6, 9, 10, 13, 18, 21, 24, 27, 31, 34, 38, 41, 44, 48, 53, 57, 62, 66, 71, 76, 83, 89, 94, 101, 108, 116])
   return Array.from({ length: 120 }, (_, index) => {
     const table = Math.floor(index / 4) + 1
-    const sold = soldNumbers.has(index + 1)
     return {
       id: `${String(table).padStart(2, '0')}-${letters[index % 4]}`,
       table,
       letter: letters[index % 4],
-      status: sold ? 'Vendido' : 'Disponible',
-      ...(sold ? { buyer: ['Mariana López', 'Diego Ramírez', 'Sofía Torres', 'Carlos Méndez'][index % 4] } : {}),
+      status: 'Disponible',
     }
   })
 }
@@ -81,6 +78,7 @@ export default function App() {
     try { return JSON.parse(localStorage.getItem(SALES_STORAGE_KEY) || '[]') as Sale[] } catch { return [] }
   })
   const [salesLoading, setSalesLoading] = useState(false)
+  const [issuedOpen, setIssuedOpen] = useState(false)
   const soldCount = tickets.filter((ticket) => ticket.status === 'Vendido').length
   const availableCount = tickets.filter((ticket) => ticket.status === 'Disponible').length
   const tableTickets = tickets.filter((ticket) => ticket.table === activeTable)
@@ -113,7 +111,7 @@ export default function App() {
     }
     const interval = window.setInterval(() => {
       if (document.visibilityState === 'visible') refreshTickets().catch((error: Error) => setDbError(error.message))
-    }, 15000)
+    }, 5000)
     window.addEventListener('focus', refreshWhenVisible)
     return () => {
       window.clearInterval(interval)
@@ -218,6 +216,14 @@ export default function App() {
     setIssuedSale({ buyer: sale.buyer, ticketIds: sale.ticketIds })
   }
 
+  async function openIssuedSales() {
+    setIssuedOpen(true)
+    if (dataMode !== 'database') return
+    setSalesLoading(true)
+    try { await refreshSales() } catch (error) { setNotice((error as Error).message) }
+    finally { setSalesLoading(false) }
+  }
+
   async function recordCancellation(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!cancelTicket || !cancelReason.trim() || busy) return
@@ -259,6 +265,8 @@ export default function App() {
 
   function resetDemo() {
     updateTickets(initialTickets())
+    setSales([])
+    try { localStorage.removeItem(SALES_STORAGE_KEY) } catch { /* El reinicio de asientos sigue funcionando si el navegador limita el almacenamiento. */ }
     setSelected([])
     setActiveTable(1)
     setNotice('Datos demo restaurados')
@@ -269,12 +277,12 @@ export default function App() {
     <aside className="sidebar">
       <a className="brand" href="#inicio" aria-label="Entre Amigos inicio"><span className="brand-mark"><span /></span><span className="brand-text">entre amigos<small>BURBUJA</small></span></a>
       <div className="side-label">GESTIÓN</div>
-      <nav className="side-nav" aria-label="Navegación principal"><a className="nav-item active" href="#panel"><Icon name="grid"/> <span>Panel de control</span></a><a className="nav-item" href="#reservas"><Icon name="ticket"/><span>Boletos emitidos</span><span className="nav-count">{sales.length}</span></a></nav>
+      <nav className="side-nav" aria-label="Navegación principal"><a className="nav-item active" href="#panel"><Icon name="grid"/> <span>Panel de control</span></a><button className="nav-item nav-button" type="button" onClick={openIssuedSales}><Icon name="ticket"/><span>Boletos emitidos</span><span className="nav-count">{sales.length}</span></button></nav>
       <div className="sidebar-bottom"><div className="event-mini"><span className="live-dot"/>EVENTO ACTIVO<p>Entre Amigos<br/>— Burbuja</p><div className="event-mini-foot">Datos de demostración</div></div><div className="profile"><div className="avatar">EA</div><div><strong>Administración</strong><small>Panel demo</small></div><span className="profile-dots">···</span></div></div>
     </aside>
 
     <main className="main-content" id="panel">
-      <header className="topbar"><div className="mobile-brand"><span className="brand-mark"><span /></span><strong>entre amigos</strong></div><div className="breadcrumb">Eventos <span>/</span> <strong>Burbuja</strong></div><div className="top-actions"><span className={`demo-pill ${dataMode === 'database' ? 'database-pill' : ''}`}><i/> {dataMode === 'database' ? 'BASE DE DATOS' : dataMode === 'loading' ? 'CONECTANDO' : 'MODO DEMO'}</span><div className="top-avatar">EA</div></div></header>
+      <header className="topbar"><div className="mobile-brand"><span className="brand-mark"><span /></span><strong>entre amigos</strong></div><div className="breadcrumb">Eventos <span>/</span> <strong>Burbuja</strong></div><div className="top-actions"><span className={`demo-pill ${dataMode === 'database' ? 'database-pill' : ''}`}><i/> {dataMode === 'database' ? 'BASE DE DATOS' : dataMode === 'loading' ? 'CONECTANDO' : 'MODO DEMO'}</span><button className="mobile-issued-shortcut" type="button" onClick={openIssuedSales} aria-label={`Ver boletos emitidos, ${sales.length}`}><Icon name="ticket"/><span>Emitidos</span><b>{sales.length}</b></button><div className="top-avatar">EA</div></div></header>
       <div className="page-wrap">
         {dataMode !== 'database' && <div className="database-notice" role="status"><strong>{dataMode === 'loading' ? 'Conectando con la base de datos…' : 'Vista de demostración'}</strong><span>{dataMode === 'loading' ? 'Cargando boletos' : dbError || 'La base de datos de Cloudflare aún no está conectada. Los cambios quedan solo en este navegador.'}</span></div>}
         {dataMode === 'database' && dbError && <div className="database-notice" role="status"><strong>Sincronización temporalmente interrumpida</strong><span>{dbError} No hagas cambios hasta que vuelva la conexión.</span></div>}
@@ -292,11 +300,6 @@ export default function App() {
           <article className="stat-card"><div className="stat-top"><span>Disponibles</span><span className="stat-icon mint"><span className="circle-check"><Icon name="check"/></span></span></div><div className="stat-value">{availableCount}<small> / 120</small></div><div className="stat-foot"><span className="stat-dot available-dot"/>Listos para asignar</div></article>
           <article className="stat-card"><div className="stat-top"><span>Vendidos</span><span className="stat-icon peach"><Icon name="ticket"/></span></div><div className="stat-value">{soldCount}<small> / 120</small></div><div className="stat-foot"><span className="stat-dot sold-dot"/>{Math.round(soldCount / 120 * 100)}% del total</div></article>
           <article className="stat-card progress-card"><div className="stat-top"><span>Progreso de venta</span><span className="progress-number">{Math.round(soldCount / 120 * 100)}%</span></div><div className="progress-track"><span style={{ width: `${soldCount / 120 * 100}%` }}/></div><div className="stat-foot">{soldCount} de 120 boletos vendidos</div></article>
-        </section>
-
-        <section className="issued-sales-card" id="reservas" aria-labelledby="issued-sales-title">
-          <div className="issued-sales-heading"><div><span className="section-kicker">COMPROBANTES GUARDADOS</span><h2 id="issued-sales-title">Boletos emitidos</h2><p>Abre cualquier comprobante para volver a ver o compartir su imagen.</p></div><button className="sync-button" onClick={() => { setSalesLoading(true); refreshSales().catch((error: Error) => setNotice(error.message)).finally(() => setSalesLoading(false)) }} disabled={salesLoading || dataMode !== 'database'}><Icon name="refresh"/><span>Actualizar lista</span></button></div>
-          {salesLoading ? <p className="issued-sales-empty">Cargando los comprobantes…</p> : sales.length ? <div className="issued-sales-list">{sales.map((sale) => <article className="issued-sale-row" key={sale.id}><span className="issued-sale-icon"><Icon name="ticket"/></span><div className="issued-sale-info"><strong>{sale.buyer}</strong><span>{sale.ticketIds.length || sale.seatCount} {(sale.ticketIds.length || sale.seatCount) === 1 ? 'asiento' : 'asientos'} · {sale.ticketIds.join(', ')}</span><small>{new Date(sale.createdAt.endsWith('Z') ? sale.createdAt : `${sale.createdAt.replace(' ', 'T')}Z`).toLocaleString('es-MX')}</small></div><button className="issued-sale-view" onClick={() => viewSale(sale)}>Ver imagen <Icon name="arrow"/></button></article>)}</div> : <p className="issued-sales-empty">{dataMode === 'database' ? 'Aún no hay comprobantes registrados.' : 'Conéctate a la base de datos para consultar los comprobantes guardados.'}</p>}
         </section>
 
         <section className="map-card real-map-card" id="boletos" aria-label="Croquis interactivo del Club Burbuja">
@@ -344,6 +347,8 @@ export default function App() {
     </main>
 
     {selected.length > 0 && <div className="selection-bar"><div className="selection-copy"><span className="selection-ticket"><Icon name="ticket"/></span><div><strong>{selected.length} {selected.length === 1 ? 'asiento seleccionado' : 'asientos seleccionados'}</strong><small>{selected.slice(0, 3).join(', ')}{selected.length > 3 ? ` +${selected.length - 3} más` : ''}</small></div></div><div className="selection-actions"><button className="clear-selection" onClick={() => setSelected([])}>Quitar selección</button><button className="sale-button" disabled={dataMode === 'loading' || (dataMode === 'database' && Boolean(dbError))} onClick={() => setSaleOpen(true)}>Continuar con la compra <Icon name="arrow"/></button></div></div>}
+
+    {issuedOpen && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setIssuedOpen(false) }}><section className="sale-modal receipts-modal" role="dialog" aria-modal="true" aria-labelledby="issued-sales-title"><button className="modal-close" aria-label="Cerrar" onClick={() => setIssuedOpen(false)}><Icon name="close"/></button><div className="section-kicker">COMPROBANTES GUARDADOS</div><h2 id="issued-sales-title">Boletos emitidos</h2><p className="modal-description">Abre un comprobante para volver a ver o compartir su imagen.</p><button className="sync-button receipts-refresh" onClick={() => { setSalesLoading(true); refreshSales().catch((error: Error) => setNotice(error.message)).finally(() => setSalesLoading(false)) }} disabled={salesLoading || dataMode !== 'database'}><Icon name="refresh"/><span>{salesLoading ? 'Actualizando…' : 'Actualizar lista'}</span></button>{salesLoading ? <p className="issued-sales-empty">Cargando comprobantes…</p> : sales.length ? <div className="issued-sales-list">{sales.map((sale) => <article className="issued-sale-row" key={sale.id}><span className="issued-sale-icon"><Icon name="ticket"/></span><div className="issued-sale-info"><strong>{sale.buyer}</strong><span>{sale.ticketIds.length || sale.seatCount} {(sale.ticketIds.length || sale.seatCount) === 1 ? 'asiento' : 'asientos'} · {sale.ticketIds.join(', ')}</span><small>{new Date(sale.createdAt.endsWith('Z') ? sale.createdAt : `${sale.createdAt.replace(' ', 'T')}Z`).toLocaleString('es-MX')}</small></div><button className="issued-sale-view" onClick={() => { setIssuedOpen(false); viewSale(sale) }}>Ver imagen <Icon name="arrow"/></button></article>)}</div> : <p className="issued-sales-empty">{dataMode === 'database' ? 'Aún no hay comprobantes registrados.' : 'Los comprobantes aparecerán aquí al conectar la base de datos.'}</p>}</section></div>}
 
     {saleOpen && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy) setSaleOpen(false) }}><section className="sale-modal" role="dialog" aria-modal="true" aria-labelledby="sale-title"><button className="modal-close" aria-label="Cerrar" onClick={() => setSaleOpen(false)}><Icon name="close"/></button><div className="modal-icon"><Icon name="ticket"/></div><div className="section-kicker">NUEVA RESERVACIÓN / COMPRA</div><h2 id="sale-title">Registrar una compra</h2><p className="modal-description">Escribe solo el nombre de quien reserva. Todos los asientos seleccionados quedarán juntos en un solo comprobante.</p><div className="modal-ticket-summary"><div><span>Asientos incluidos</span><strong>{selected.length}</strong></div><div className="summary-chips">{selected.map((id) => <span key={id}>{id.replace('-', ' · ')}</span>)}</div></div><form onSubmit={recordSale}><label htmlFor="buyer-name">Nombre de la persona</label><input id="buyer-name" autoFocus required maxLength={80} placeholder="Ej. María García" value={buyer} onChange={(event) => setBuyer(event.target.value)}/><p className="name-only-note"><span>i</span> No pedimos teléfono, correo ni otros datos personales.</p><button className="confirm-sale" type="submit" disabled={!buyer.trim() || busy || (dataMode === 'database' && Boolean(dbError))}>{busy ? 'Guardando…' : 'Guardar y generar boleto'} <Icon name="arrow"/></button></form></section></div>}
     {issuedSale && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) { setIssuedSale(null); setTicketImageUrl('') } }}><section className="sale-modal ticket-issued-modal" role="dialog" aria-modal="true" aria-labelledby="issued-title"><button className="modal-close" aria-label="Cerrar" onClick={() => { setIssuedSale(null); setTicketImageUrl('') }}><Icon name="close"/></button><div className="section-kicker">RESERVACIÓN GUARDADA</div><h2 id="issued-title">Comprobante listo</h2><p className="modal-description">Un solo comprobante para {issuedSale.buyer} y {issuedSale.ticketIds.length} {issuedSale.ticketIds.length === 1 ? 'asiento' : 'asientos'}.</p>{ticketImageUrl ? <img className="ticket-preview" src={ticketImageUrl} alt={`Comprobante de ${issuedSale.buyer} con sus asientos y mesas`}/> : ticketImageError ? <p className="ticket-image-error">{ticketImageError}</p> : <p className="ticket-generating">Preparando el comprobante…</p>}{ticketImageUrl && <button className="confirm-sale" onClick={() => shareTicketImage()}>Compartir o guardar comprobante <Icon name="arrow"/></button>}<p className="ticket-note">Incluye el nombre, los números de mesa y los asientos reservados.</p></section></div>}
