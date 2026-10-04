@@ -8,8 +8,12 @@ const BORDER = '#dce8ed'
 
 export async function createTicketImage(buyer: string, tickets: TicketImageItem[]): Promise<Blob> {
   const flyer = new Image()
-  flyer.src = '/entre-amigos-flyer.jpg'
-  await flyer.decode()
+  await new Promise<void>((resolve, reject) => {
+    flyer.onload = () => resolve()
+    flyer.onerror = () => reject(new Error('No se pudo cargar el flyer del evento. Revisa tu conexión e inténtalo de nuevo.'))
+    flyer.src = new URL('/entre-amigos-flyer.jpg', window.location.origin).toString()
+    if (flyer.complete && flyer.naturalWidth > 0) resolve()
+  })
 
   const byTable = new Map<number, string[]>()
   for (const ticket of tickets) {
