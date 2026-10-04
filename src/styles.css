@@ -195,3 +195,44 @@
 .event-flyer-copy>a:last-child{display:inline-flex;align-items:center;gap:7px;color:#6855a4;font-size:12px;font-weight:700;text-decoration:none}
 .event-flyer-copy>a:last-child svg{width:14px;height:14px}
 @media(max-width:520px){.event-flyer-card{grid-template-columns:112px minmax(0,1fr);gap:13px;margin:14px 0 18px;padding:11px;border-radius:13px}.event-flyer-image-link{width:112px;height:145px;border-radius:7px}.event-flyer-copy{gap:6px}.event-flyer-copy h2{font-size:17px}.event-flyer-copy p{font-size:11px}.event-flyer-details{font-size:10px}.event-flyer-details strong{font-size:11px}.event-flyer-copy>a:last-child{font-size:10px}}
+
+/* Diseño simplificado para facilitar la operación desde teléfono */
+.page-wrap{max-width:1320px}
+.eyebrow,.section-kicker{font-size:12px;letter-spacing:.09em}
+.page-heading h1{font-size:36px;line-height:1.15}.subtitle{font-size:16px;line-height:1.5}
+.stat-top{font-size:14px}.stat-value{font-size:36px}.stat-foot{font-size:12px}
+.map-heading h2,.tickets-heading h2{font-size:24px}.map-heading p,.tickets-heading p{font-size:14px;line-height:1.5}
+.real-map-legend>span,.real-map-legend small{font-size:12px}.map-source-badge{font-size:10px}
+.table-picker-heading{grid-column:1/-1;display:grid;gap:4px;padding:4px 0 5px;color:#333}
+.table-picker-heading strong{font-size:17px}.table-picker-heading span{font-size:12px;color:#646b66}
+.table-choice{display:flex;min-height:62px;flex-direction:column;justify-content:center;gap:5px;border:2px solid #cbded0!important;border-radius:11px!important;background:#eff8f1!important;color:#205c39!important;padding:7px!important;text-align:center}
+.table-choice strong{font-size:14px}.table-choice small{font-size:11px;font-weight:600}
+.table-choice--limited{border-color:#e5c769!important;background:#fff6d9!important;color:#765100!important}
+.table-choice--sold-out,.table-choice--unavailable{border-color:#e2bcbc!important;background:#fff0f0!important;color:#8e3030!important}
+.table-choice.picker-active{outline:3px solid #40378e;border-color:#40378e!important;box-shadow:0 0 0 2px #fff!important;background:#fff!important;color:#30277c!important}
+.seat-panel-heading h3{font-size:22px}.seat-count{font-size:14px}.seat-options{gap:12px}
+.seat-option{min-height:96px;border-width:2px;border-radius:13px;padding:13px}
+.seat-letter{font-size:24px}.seat-detail strong{font-size:13px}.seat-detail small{font-size:12px}.seat-option-sold .seat-detail small.buyer-name{font-size:16px}
+.cancel-hint{font-size:13px;line-height:1.5}.history-button{min-height:48px;font-size:14px}
+.selection-bar{min-height:82px;padding:14px 18px}.selection-copy strong{font-size:15px}.selection-copy small{font-size:12px}.selection-actions button{min-height:50px;font-size:14px;padding:0 14px}
+.sale-modal{width:min(100%,540px);padding:30px}.sale-modal h2{font-size:26px;line-height:1.25}.modal-description{font-size:16px;line-height:1.55}
+.modal-ticket-summary{padding:14px}.modal-ticket-summary>div:first-child span{font-size:14px}.modal-ticket-summary strong{width:36px;height:36px;font-size:17px}
+.summary-chips{gap:6px}.summary-chips span{font-size:12px;padding:6px 8px}.sale-modal form>label{font-size:15px;margin-top:14px}
+.sale-modal form>input{height:54px;font-size:16px;padding:0 14px}.name-only-note{font-size:13px;line-height:1.5}.confirm-sale{height:auto;min-height:56px;font-size:16px}
+.ticket-preview{width:min(100%,440px);max-height:50vh}.ticket-note,.ticket-generating,.ticket-image-error{font-size:14px;line-height:1.5}
+.history-list article{gap:7px;padding:16px;font-size:15px}.history-list article span{font-size:14px}.history-list article small{font-size:12px;line-height:1.5}
+.database-notice{font-size:14px;padding:15px 17px}.database-notice strong{font-size:15px}.database-notice span{font-size:13px}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #3d388f!important;outline-offset:3px}
+@media(max-width:760px){
+ .page-wrap{padding:20px 14px 100px}.page-heading{align-items:flex-start;gap:12px}.page-heading h1{font-size:29px}.subtitle{font-size:14px}
+ .compact-stats .stat-card{min-height:108px;padding:14px}.stat-top{font-size:13px}.stat-value{font-size:31px}.stat-foot{font-size:11px}
+ .event-flyer-copy h2{font-size:18px}.event-flyer-copy p{font-size:12px}.event-flyer-details,.event-flyer-details strong{font-size:12px}
+ .real-map-card{padding:18px 14px 0}.real-map-card .map-heading h2{font-size:21px}.real-map-card .map-heading p{font-size:13px}.map-source-badge{font-size:9px}
+ .real-map-legend{gap:12px}.real-map-legend>span,.real-map-legend small{font-size:11px}.table-picker{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;padding:14px 0}
+ .table-picker .table-choice{width:100%;height:auto;min-height:66px}.table-choice strong{font-size:12px}.table-choice small{font-size:10px}
+ .seat-panel-heading h3{font-size:20px}.seat-count{font-size:12px}.seat-options{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ .seat-option{min-height:92px;padding:12px}.seat-letter{font-size:24px}.seat-detail strong,.seat-detail small{font-size:12px}.seat-option-sold .seat-detail small.buyer-name{font-size:16px}
+ .selection-bar{left:10px;bottom:10px;width:calc(100vw - 20px);min-height:0;gap:10px;padding:12px;flex-direction:column;align-items:stretch}
+ .selection-copy strong{font-size:14px}.selection-copy small{font-size:11px}.selection-actions{display:grid;grid-template-columns:1fr 1.5fr;gap:8px}.selection-actions button{min-height:50px;font-size:13px;padding:0 8px}
+ .sale-modal{padding:26px 20px}.sale-modal h2{font-size:23px}.modal-description{font-size:15px}.history-button{font-size:13px}.ticket-issued-modal{width:min(100%,480px)}
+}
