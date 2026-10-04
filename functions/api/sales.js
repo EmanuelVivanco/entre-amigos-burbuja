@@ -1,5 +1,27 @@
 import { database, json, readJson } from './_shared.js'
 
+export async function onRequestGet(context) {
+  try {
+    const { results } = await database(context).prepare(`
+      SELECT sales.id, sales.buyer_name AS buyer, sales.created_at AS createdAt,
+        COUNT(events.id) AS seatCount,
+        GROUP_CONCAT(events.ticket_id, ',') AS ticketIds
+      FROM ticket_sales AS sales
+      LEFT JOIN ticket_events AS events
+        ON events.sale_id = sales.id AND events.event_type = 'sale'
+      GROUP BY sales.id
+      ORDER BY sales.created_at DESC
+      LIMIT 300
+    `).all()
+    return json({ sales: results.map((sale) => ({
+      ...sale,
+      ticketIds: sale.ticketIds ? sale.ticketIds.split(',') : [],
+    })) })
+  } catch (error) {
+    return json({ error: error.message || 'No se pudieron cargar los boletos emitidos.' }, 503)
+  }
+}
+
 export async function onRequestPost(context) {
   try {
     const body = await readJson(context.request)
