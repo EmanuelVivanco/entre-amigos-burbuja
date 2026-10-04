@@ -4,9 +4,11 @@ import { createTicketImage } from './ticketImage'
 // Este estado describe la venta; el futuro check-in se guardará por separado.
 type Status = 'Disponible' | 'Vendido' | 'No disponible'
 type Ticket = { id: string; table: number; letter: string; status: Status; buyer?: string; saleId?: string }
+type Sale = { id: string; buyer: string; ticketIds: string[]; seatCount: number; createdAt: string }
 type TicketEvent = { id: number; ticketIds: string; ticketCount: number; type: 'sale' | 'cancellation'; previousStatus: string; newStatus: string; buyer: string | null; reason: string; createdAt: string }
 
 const STORAGE_KEY = 'burbuja-demo-tickets-v1'
+const SALES_STORAGE_KEY = 'burbuja-demo-sales-v1'
 const letters = ['A', 'B', 'C', 'D']
 const tablePositions = [
   { table: 1, x: 62, y: 357 }, { table: 2, x: 62, y: 313 }, { table: 3, x: 62, y: 267 }, { table: 4, x: 62, y: 226 }, { table: 5, x: 62, y: 185 }, { table: 6, x: 62, y: 139 },
@@ -75,6 +77,10 @@ export default function App() {
   const [issuedSale, setIssuedSale] = useState<{ buyer: string; ticketIds: string[] } | null>(null)
   const [ticketImageUrl, setTicketImageUrl] = useState('')
   const [ticketImageError, setTicketImageError] = useState('')
+  const [sales, setSales] = useState<Sale[]>(() => {
+    try { return JSON.parse(localStorage.getItem(SALES_STORAGE_KEY) || '[]') as Sale[] } catch { return [] }
+  })
+  const [salesLoading, setSalesLoading] = useState(false)
   const soldCount = tickets.filter((ticket) => ticket.status === 'Vendido').length
   const availableCount = tickets.filter((ticket) => ticket.status === 'Disponible').length
   const tableTickets = tickets.filter((ticket) => ticket.table === activeTable)
@@ -87,6 +93,13 @@ export default function App() {
     setTickets(data.tickets.map((ticket: { id: string; table: number; letter: string; status: Status; buyer: string | null; saleId?: string | null }) => ({ ...ticket, buyer: ticket.buyer || undefined, saleId: ticket.saleId || undefined })))
     setDataMode('database')
     setDbError('')
+  }
+
+  async function refreshSales() {
+    const response = await fetch('/api/sales', { cache: 'no-store' })
+    const data = await response.json()
+    if (!response.ok) throw new Error(data.error || 'No se pudieron cargar los boletos emitidos.')
+    setSales(data.sales as Sale[])
   }
 
   useEffect(() => {
@@ -109,14 +122,19 @@ export default function App() {
   }, [dataMode])
 
   useEffect(() => {
+    if (dataMode === 'database') refreshSales().catch((error: Error) => setDbError(error.message))
+  }, [dataMode])
+
+  useEffect(() => {
     if (!issuedSale) return
     let objectUrl = ''
     setTicketImageUrl('')
     setTicketImageError('')
     const purchased = issuedSale.ticketIds.map((id) => {
       const ticket = tickets.find((item) => item.id === id)
-      return ticket ? { id: ticket.id, table: ticket.table, letter: ticket.letter } : null
-    }).filter((ticket): ticket is { id: string; table: number; letter: string } => ticket !== null)
+      const [tableNumber, letter] = id.split('-')
+      return { id, table: ticket?.table ?? Number(tableNumber), letter: ticket?.letter ?? letter }
+    })
     createTicketImage(issuedSale.buyer, purchased).then((blob) => {
       objectUrl = URL.createObjectURL(blob)
       setTicketImageUrl(objectUrl)
@@ -158,9 +176,16 @@ export default function App() {
       const soldSet = new Set(soldIds)
       setTickets((current) => current.map((ticket) => soldSet.has(ticket.id) ? { ...ticket, status: 'Vendido', buyer: cleanName, saleId } : ticket))
       await refreshTickets().catch((error: Error) => setDbError(error.message))
+      await refreshSales().catch((error: Error) => setDbError(error.message))
     } else {
       const ids = new Set(selected)
       updateTickets(tickets.map((ticket) => ids.has(ticket.id) ? { ...ticket, status: 'Vendido', buyer: cleanName, saleId } : ticket))
+      const nextSale: Sale = { id: saleId, buyer: cleanName, ticketIds: soldIds, seatCount: soldIds.length, createdAt: new Date().toISOString() }
+      setSales((current) => {
+        const next = [nextSale, ...current]
+        try { localStorage.setItem(SALES_STORAGE_KEY, JSON.stringify(next)) } catch { /* Mantener utilizable la sesión actual. */ }
+        return next
+      })
     }
     setNotice(`${selected.length} ${selected.length === 1 ? 'boleto registrado' : 'boletos registrados'} para ${cleanName}`)
     setIssuedSale({ buyer: cleanName, ticketIds: soldIds })
@@ -187,6 +212,10 @@ export default function App() {
     } catch (error) {
       if (error instanceof Error && error.name !== 'AbortError') setNotice(error.message || 'No se pudo compartir la imagen.')
     }
+  }
+
+  function viewSale(sale: Sale) {
+    setIssuedSale({ buyer: sale.buyer, ticketIds: sale.ticketIds })
   }
 
   async function recordCancellation(event: React.FormEvent<HTMLFormElement>) {
@@ -240,7 +269,7 @@ export default function App() {
     <aside className="sidebar">
       <a className="brand" href="#inicio" aria-label="Entre Amigos inicio"><span className="brand-mark"><span /></span><span className="brand-text">entre amigos<small>BURBUJA</small></span></a>
       <div className="side-label">GESTIÓN</div>
-      <nav className="side-nav" aria-label="Navegación principal"><a className="nav-item active" href="#panel"><Icon name="grid"/> <span>Panel de control</span></a><a className="nav-item" href="#boletos"><Icon name="ticket"/><span>Boletos</span><span className="nav-count">120</span></a></nav>
+      <nav className="side-nav" aria-label="Navegación principal"><a className="nav-item active" href="#panel"><Icon name="grid"/> <span>Panel de control</span></a><a className="nav-item" href="#reservas"><Icon name="ticket"/><span>Boletos emitidos</span><span className="nav-count">{sales.length}</span></a></nav>
       <div className="sidebar-bottom"><div className="event-mini"><span className="live-dot"/>EVENTO ACTIVO<p>Entre Amigos<br/>— Burbuja</p><div className="event-mini-foot">Datos de demostración</div></div><div className="profile"><div className="avatar">EA</div><div><strong>Administración</strong><small>Panel demo</small></div><span className="profile-dots">···</span></div></div>
     </aside>
 
@@ -263,6 +292,11 @@ export default function App() {
           <article className="stat-card"><div className="stat-top"><span>Disponibles</span><span className="stat-icon mint"><span className="circle-check"><Icon name="check"/></span></span></div><div className="stat-value">{availableCount}<small> / 120</small></div><div className="stat-foot"><span className="stat-dot available-dot"/>Listos para asignar</div></article>
           <article className="stat-card"><div className="stat-top"><span>Vendidos</span><span className="stat-icon peach"><Icon name="ticket"/></span></div><div className="stat-value">{soldCount}<small> / 120</small></div><div className="stat-foot"><span className="stat-dot sold-dot"/>{Math.round(soldCount / 120 * 100)}% del total</div></article>
           <article className="stat-card progress-card"><div className="stat-top"><span>Progreso de venta</span><span className="progress-number">{Math.round(soldCount / 120 * 100)}%</span></div><div className="progress-track"><span style={{ width: `${soldCount / 120 * 100}%` }}/></div><div className="stat-foot">{soldCount} de 120 boletos vendidos</div></article>
+        </section>
+
+        <section className="issued-sales-card" id="reservas" aria-labelledby="issued-sales-title">
+          <div className="issued-sales-heading"><div><span className="section-kicker">COMPROBANTES GUARDADOS</span><h2 id="issued-sales-title">Boletos emitidos</h2><p>Abre cualquier comprobante para volver a ver o compartir su imagen.</p></div><button className="sync-button" onClick={() => { setSalesLoading(true); refreshSales().catch((error: Error) => setNotice(error.message)).finally(() => setSalesLoading(false)) }} disabled={salesLoading || dataMode !== 'database'}><Icon name="refresh"/><span>Actualizar lista</span></button></div>
+          {salesLoading ? <p className="issued-sales-empty">Cargando los comprobantes…</p> : sales.length ? <div className="issued-sales-list">{sales.map((sale) => <article className="issued-sale-row" key={sale.id}><span className="issued-sale-icon"><Icon name="ticket"/></span><div className="issued-sale-info"><strong>{sale.buyer}</strong><span>{sale.ticketIds.length || sale.seatCount} {(sale.ticketIds.length || sale.seatCount) === 1 ? 'asiento' : 'asientos'} · {sale.ticketIds.join(', ')}</span><small>{new Date(sale.createdAt.endsWith('Z') ? sale.createdAt : `${sale.createdAt.replace(' ', 'T')}Z`).toLocaleString('es-MX')}</small></div><button className="issued-sale-view" onClick={() => viewSale(sale)}>Ver imagen <Icon name="arrow"/></button></article>)}</div> : <p className="issued-sales-empty">{dataMode === 'database' ? 'Aún no hay comprobantes registrados.' : 'Conéctate a la base de datos para consultar los comprobantes guardados.'}</p>}
         </section>
 
         <section className="map-card real-map-card" id="boletos" aria-label="Croquis interactivo del Club Burbuja">
