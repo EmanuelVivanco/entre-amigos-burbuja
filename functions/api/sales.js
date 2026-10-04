@@ -15,13 +15,14 @@ export async function onRequestPost(context) {
     if (results.length !== ids.length) return json({ error: 'Uno de los boletos no existe.' }, 404)
     if (results.some((ticket) => ticket.status !== 'Disponible')) return json({ error: 'Alguien cambió un boleto. Actualiza el mapa e inténtalo de nuevo.' }, 409)
 
-    const statements = []
+    const saleId = crypto.randomUUID()
+    const statements = [db.prepare('INSERT INTO ticket_sales (id, buyer_name, seat_count) VALUES (?, ?, ?)').bind(saleId, name, ids.length)]
     for (const id of ids) {
-      statements.push(db.prepare("UPDATE tickets SET status = 'Vendido', buyer_name = ?, sold_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?").bind(name, id))
-      statements.push(db.prepare("INSERT INTO ticket_events (ticket_id, event_type, previous_status, new_status, buyer_name, reason) VALUES (?, 'sale', 'Disponible', 'Vendido', ?, 'Venta registrada')").bind(id, name))
+      statements.push(db.prepare("UPDATE tickets SET status = 'Vendido', buyer_name = ?, sale_id = ?, sold_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?").bind(name, saleId, id))
+      statements.push(db.prepare("INSERT INTO ticket_events (ticket_id, event_type, previous_status, new_status, buyer_name, reason, sale_id) VALUES (?, 'sale', 'Disponible', 'Vendido', ?, 'Venta registrada', ?)").bind(id, name, saleId))
     }
     await db.batch(statements)
-    return json({ ok: true, count: ids.length })
+    return json({ ok: true, saleId, count: ids.length })
   } catch (error) {
     const conflict = /disponible|constraint/i.test(error.message || '')
     return json({ error: conflict ? 'Alguien cambió un boleto. Actualiza el mapa e inténtalo de nuevo.' : error.message || 'No se pudo registrar la venta.' }, conflict ? 409 : 503)
