@@ -1,0 +1,14 @@
+import { database, json } from './_shared.js'
+
+// Public seat state for the future ticket buyer view.
+// Deliberately omits buyer names and sale identifiers.
+export async function onRequestGet(context) {
+  try {
+    const { results } = await database(context).prepare(
+      'SELECT id, table_number AS "table", seat_letter AS letter, status FROM tickets ORDER BY table_number, seat_letter'
+    ).all()
+    return json({ tickets: results })
+  } catch (error) {
+    return json({ error: error.message || 'No se pudo consultar la disponibilidad.' }, 503)
+  }
+}
