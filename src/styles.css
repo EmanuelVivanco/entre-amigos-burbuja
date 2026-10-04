@@ -212,6 +212,31 @@
 @media(max-width:520px){.event-flyer-card{grid-template-columns:112px minmax(0,1fr);gap:13px;margin:14px 0 18px;padding:11px;border-radius:13px}.event-flyer-image-link{width:112px;height:145px;border-radius:7px}.event-flyer-copy{gap:6px}.event-flyer-copy h2{font-size:17px}.event-flyer-copy p{font-size:11px}.event-flyer-details{font-size:10px}.event-flyer-details strong{font-size:11px}.event-flyer-copy>a:last-child{font-size:10px}}
 @media(max-width:520px){.issued-sales-card{padding:15px 12px;margin-bottom:14px}.issued-sales-heading{align-items:flex-start;flex-direction:column}.issued-sales-heading h2{font-size:20px}.issued-sales-heading p{font-size:12px}.issued-sale-row{gap:9px;padding:10px}.issued-sale-icon{width:34px;height:34px;flex-basis:34px}.issued-sale-info strong{font-size:14px}.issued-sale-info span{font-size:11px}.issued-sale-info small{font-size:10px}.issued-sale-view{min-height:38px;padding:0 8px;font-size:11px}.issued-sale-view svg{display:none}}
 
+/* Emitidos se consultan desde un acceso compacto, sin ocupar el panel principal. */
+.nav-button{width:100%;border:0;background:transparent;text-align:left}
+.mobile-issued-shortcut{display:none}
+.receipts-modal{width:min(100%,720px);max-height:88vh;overflow:auto;padding:28px}
+.receipts-modal h2{margin:5px 40px 5px 0;color:#102a43;font:700 25px Poppins,Manrope,sans-serif}
+.receipts-modal .modal-description{font-size:14px;line-height:1.5}
+.receipts-refresh{margin:0 0 14px}
+.receipts-modal .issued-sales-list{max-height:52vh;overflow:auto;padding-right:3px}
+@media(max-width:760px){
+ .mobile-issued-shortcut{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:34px;padding:0 9px;border:1px solid #dceaf1;border-radius:9px;background:#f5fbfe;color:#176f9e;font-size:11px;font-weight:700;white-space:nowrap}
+ .mobile-issued-shortcut svg{width:15px;height:15px}
+ .mobile-issued-shortcut b{display:grid;place-items:center;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:#d9effa;color:#176f9e;font-size:10px}
+ .top-actions{gap:6px}.demo-pill{font-size:7px;letter-spacing:0;padding:6px 7px}.top-avatar{display:none}
+ .receipts-modal{padding:25px 16px 18px}.receipts-modal h2{font-size:22px}.receipts-modal .modal-description{font-size:13px}.receipts-modal .issued-sales-list{max-height:55vh}
+ .receipts-modal .issued-sale-row{display:grid;grid-template-columns:34px minmax(0,1fr);align-items:start}
+ .receipts-modal .issued-sale-view{grid-column:2;justify-self:start;min-height:42px;padding:0 13px;font-size:13px}
+ .receipts-modal .issued-sale-view svg{display:block}
+ .page-heading{align-items:flex-start}.page-heading h1{font-size:27px}.heading-actions{flex-wrap:wrap;justify-content:flex-end}
+ .compact-stats .stat-card{min-width:0}.stat-top{gap:4px}.stat-top>span:first-child{line-height:1.25}
+ .real-map-legend{row-gap:9px}.table-picker{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .floorplan-wrap{overflow-x:auto;overscroll-behavior-x:contain}.floorplan{min-width:620px}
+ .seat-option{touch-action:manipulation}.table-choice,.floor-table,.seat-option,.sync-button,.issued-sale-view{touch-action:manipulation}
+}
+@media(max-width:360px){.mobile-brand{font-size:11px}.top-actions{gap:4px}.demo-pill{font-size:0;padding:6px}.demo-pill i{margin:0}.mobile-issued-shortcut{gap:4px;padding:0 6px;font-size:10px}.page-wrap{padding-left:11px;padding-right:11px}.compact-stats .stat-card{padding:11px}.compact-stats .stat-top{font-size:11px}}
+
 /* Diseño simplificado para facilitar la operación desde teléfono */
 .page-wrap{max-width:1320px}
 .eyebrow,.section-kicker{font-size:12px;letter-spacing:.09em}
